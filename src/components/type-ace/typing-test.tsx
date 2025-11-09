@@ -16,7 +16,7 @@ export function TypingTest() {
   const [activeText, setActiveText] = useState(textSamples[0]);
   const [typed, setTyped] = useState('');
   const [status, setStatus] = useState<'waiting' | 'running' | 'finished'>('waiting');
-  const [timeLeft, setTimeLeft] = useState(TEST_DURATION);
+  const [timeLeft, setTimeLeft] = useState(TEST_DURATION -1);
   
   const [stats, setStats] = useState({ wpm: 0, accuracy: 100, errors: 0 });
   const finalStats = useRef({ wpm: 0, accuracy: 100, errors: 0 });
@@ -47,13 +47,13 @@ export function TypingTest() {
         errors: currentErrors 
     };
 
-  }, [stats, typed, textToType]);
+  }, [typed, textToType]);
 
   const restartTest = useCallback(() => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     setTyped('');
     setStatus('waiting');
-    setTimeLeft(TEST_DURATION);
+    setTimeLeft(TEST_DURATION - 1);
     setStats({ wpm: 0, accuracy: 100, errors: 0 });
     startTimeRef.current = null;
     const newText = textSamples.find(t => t.id === activeText.id);
@@ -77,15 +77,15 @@ export function TypingTest() {
 
     timerIntervalRef.current = setInterval(() => {
       const elapsedTime = (Date.now() - (startTimeRef.current ?? Date.now())) / 1000;
+      const newTimeLeft = TEST_DURATION - 1 - Math.floor(elapsedTime);
       
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          endTest();
-          return 0;
-        }
-        return TEST_DURATION - Math.floor(elapsedTime);
-      });
+      setTimeLeft(newTimeLeft);
 
+      if (newTimeLeft <= 0) {
+        endTest();
+        return;
+      }
+      
       const wpm = elapsedTime > 0 ? (typed.replace(/\s/g, '').length / 5) / (elapsedTime / 60) : 0;
 
       let currentErrors = 0;
@@ -205,7 +205,7 @@ export function TypingTest() {
                   <Clock className="h-5 w-5 text-primary" />
                   <span>{timeLeft}s</span>
                 </div>
-                <Progress value={(TEST_DURATION - timeLeft) / TEST_DURATION * 100} className="w-48 h-2" />
+                <Progress value={((TEST_DURATION - 1) - timeLeft) / (TEST_DURATION-1) * 100} className="w-48 h-2" />
               </div>
               <div className="flex items-center gap-6">
                 <div className="flex flex-col items-center">
