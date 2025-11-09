@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -23,34 +24,39 @@ export function TypingTest() {
 
   const startTimeRef = useRef<number | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const textToType = useMemo(() => activeText.text, [activeText]);
   const characters = useMemo(() => textToType.split(''), [textToType]);
 
+  const calculateStats = useCallback(() => {
+    if (!startTimeRef.current) return { wpm: 0, accuracy: 100, errors: 0 };
+    
+    const elapsedTime = (Date.now() - startTimeRef.current) / 1000;
+    const wpm = (typed.replace(/\s/g, '').length / 5) / (elapsedTime / 60);
+
+    let currentErrors = 0;
+    for (let i = 0; i < typed.length; i++) {
+      if (typed[i] !== textToType[i]) {
+        currentErrors++;
+      }
+    }
+    
+    const accuracy = typed.length > 0 ? ((typed.length - currentErrors) / typed.length) * 100 : 100;
+    
+    return { 
+      wpm: Math.round(wpm), 
+      accuracy: Math.max(0, Math.round(accuracy)), 
+      errors: currentErrors 
+    };
+  }, [typed, textToType]);
+
+
   const endTest = useCallback(() => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     setStatus('finished');
-    
-    if (!startTimeRef.current) return;
-
-    const elapsedTime = (Date.now() - startTimeRef.current) / 1000;
-    const wpm = (typed.replace(/\s/g, '').length / 5) / (elapsedTime / 60);
-    
-    let currentErrors = 0;
-    for (let i = 0; i < typed.length; i++) {
-        if (typed[i] !== textToType[i]) {
-            currentErrors++;
-        }
-    }
-    const accuracy = typed.length > 0 ? ((typed.length - currentErrors) / typed.length) * 100 : 100;
-    
-    finalStats.current = { 
-        wpm: Math.round(wpm), 
-        accuracy: Math.max(0, Math.round(accuracy)), 
-        errors: currentErrors 
-    };
-
-  }, [typed, textToType]);
+    finalStats.current = calculateStats();
+  }, [calculateStats]);
 
   const restartTest = useCallback(() => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
@@ -63,6 +69,7 @@ export function TypingTest() {
     if (newText) {
       setActiveText(newText);
     }
+    inputRef.current?.focus();
   }, [activeText.id]);
 
   useEffect(() => {
@@ -71,11 +78,11 @@ export function TypingTest() {
     }
   }, [typed, textToType.length, status, endTest]);
 
-  // Effect for timer
+  // Unified timer and stats effect
   useEffect(() => {
     if (status !== 'running') {
-        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-        return;
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      return;
     }
 
     if (!startTimeRef.current) {
@@ -84,9 +91,10 @@ export function TypingTest() {
 
     timerIntervalRef.current = setInterval(() => {
       const elapsedTime = (Date.now() - (startTimeRef.current ?? Date.now())) / 1000;
-      const newTimeLeft = TEST_DURATION - 1 - Math.floor(elapsedTime);
+      const newTimeLeft = Math.max(0, TEST_DURATION - 1 - Math.floor(elapsedTime));
       
       setTimeLeft(newTimeLeft);
+      setStats(calculateStats());
 
       if (newTimeLeft <= 0) {
         endTest();
@@ -96,52 +104,31 @@ export function TypingTest() {
     return () => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
-  }, [status, endTest]);
+  }, [status, endTest, calculateStats]);
 
-  // Effect for stats
-  useEffect(() => {
-    if (status !== 'running') return;
-    
-    const elapsedTime = (Date.now() - (startTimeRef.current ?? Date.now())) / 1000;
-    if (elapsedTime === 0) return;
 
-    const wpm = (typed.replace(/\s/g, '').length / 5) / (elapsedTime / 60);
-
-    let currentErrors = 0;
-    for (let i = 0; i < typed.length; i++) {
-      if (typed[i] !== textToType[i]) {
-        currentErrors++;
-      }
-    }
-    
-    const accuracy = typed.length > 0 ? ((typed.length - currentErrors) / typed.length) * 100 : 100;
-    
-    setStats({ wpm: Math.round(wpm), accuracy: Math.max(0, Math.round(accuracy)), errors: currentErrors });
-
-  }, [typed, status, textToType]);
-
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    e.preventDefault();
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (status === 'finished') return;
 
-    if (status === 'waiting' && e.key.length === 1) {
+    if (status === 'waiting' && e.target.value.length > 0) {
       setStatus('running');
     }
-
-    if (e.key === 'Backspace') {
-      setTyped(prev => prev.slice(0, -1));
-    } else if (e.key.length === 1) { // Catches all printable characters
-      setTyped(prev => (prev.length < textToType.length ? prev + e.key : prev));
+    
+    if (e.target.value.length <= textToType.length) {
+      setTyped(e.target.value);
     }
-  }, [status, textToType.length]);
+  };
+
+  const handleTextareaClick = () => {
+    if (status !== 'finished') {
+      inputRef.current?.focus();
+    }
+  };
 
   useEffect(() => {
-    const target = window;
-    target.addEventListener('keydown', handleKeyDown);
-    return () => {
-      target.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [handleKeyDown]);
+    inputRef.current?.focus();
+  }, [status]);
+
 
   if (status === 'finished') {
     return <Results stats={finalStats.current} restartTest={restartTest} />;
@@ -177,12 +164,27 @@ export function TypingTest() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="relative text-2xl/relaxed md:text-3xl/relaxed tracking-wide font-mono p-4 sm:p-6 md:p-8 rounded-lg border bg-muted/30">
+          <div 
+            className="relative text-2xl/relaxed md:text-3xl/relaxed tracking-wide font-mono p-4 sm:p-6 md:p-8 rounded-lg border bg-muted/30 cursor-text"
+            onClick={handleTextareaClick}
+          >
             {status === 'waiting' && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background/70 rounded-lg">
-                <p className="text-lg text-muted-foreground animate-pulse">Start typing to begin the test...</p>
+              <div className="absolute inset-0 flex items-center justify-center bg-background/70 rounded-lg z-10 pointer-events-none">
+                <p className="text-lg text-muted-foreground animate-pulse">Click here and start typing to begin...</p>
               </div>
             )}
+             <input
+              ref={inputRef}
+              type="text"
+              className="absolute inset-0 w-full h-full p-4 sm:p-6 md:p-8 bg-transparent border-none outline-none text-transparent caret-transparent"
+              value={typed}
+              onChange={handleInputChange}
+              onPaste={(e) => e.preventDefault()}
+              spellCheck="false"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+            />
             {characters.map((char, index) => {
               const isTyped = index < typed.length;
               const isCorrect = isTyped ? typed[index] === char : null;
