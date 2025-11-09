@@ -1,22 +1,16 @@
-export const textSamples = [
-  {
-    name: 'The Quick Brown Fox',
-    id: 'quick-brown-fox',
-    text: 'The quick brown fox jumps over the lazy dog. This sentence contains all the letters of the English alphabet. Typing it is a good way to practice your skills and warm up for more challenging texts.'
-  },
-  {
-    name: 'Programming Wisdom',
-    id: 'programming-wisdom',
-    text: 'Programming is the art of telling another human being what one wants the computer to do. The most important property of a program is whether it accomplishes the intention of its user. Any fool can write code that a computer can understand. Good programmers write code that humans can understand.'
-  },
-  {
-    name: 'A Tale of Two Cities',
-    id: 'a-tale-of-two-cities',
-    text: 'It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the epoch of belief, it was the epoch of incredulity, it was the season of Light, it was the season of Darkness, it was the spring of hope, it was the winter of despair.'
-  },
-  {
-    name: 'The Sea',
-    id: 'the-sea',
-    text: 'The sea is a vast expanse of saltwater that covers more than 70 percent of the Earth\'s surface. It is a world of mystery and wonder, teeming with a diverse array of life, from microscopic plankton to the largest animal on the planet, the blue whale. Its currents regulate global climate, and its waves shape our coastlines.'
-  }
-];
+export const textSamples = {
+  'easy-0': 'The quick brown fox jumps over the lazy dog. This sentence contains all the letters of the English alphabet. Typing it is a good way to practice your skills and warm up for more challenging texts. Many people enjoy typing this classic line.',
+  'easy-1': 'A journey of a thousand miles begins with a single step. Keep moving forward and never give up on your dreams. The path may be long and difficult, but the destination is worth the effort you put in. Success is just around the corner.',
+  'easy-2': 'The sun always shines brightest after the rain. Look for the silver lining in every cloud. Life is full of ups and downs, but it is important to stay positive. Remember that tomorrow is a new day with new opportunities waiting for you.',
+  'easy-3': 'To be or not to be, that is the question. This famous line from Shakespeare is known around the world. It speaks to the fundamental questions of life and existence. Many scholars have debated its true meaning for centuries now.',
+
+  'medium-0': 'Programming is the art of telling a computer what to do. Good programmers write code that humans can understand. Code is read much more often than it is written. Therefore, clarity and simplicity are paramount for long-term maintainability and collaboration.',
+  'medium-1': 'The scientific method involves observation, hypothesis, experimentation, and conclusion. This systematic approach allows researchers to test their ideas and build upon existing knowledge. It is the cornerstone of modern science and has led to countless discoveries and technological advancements.',
+  'medium-2': 'Economics studies the production, distribution, and consumption of goods and services. Microeconomics focuses on individual agents and markets, while macroeconomics examines the economy as a whole. Key concepts include supply and demand, inflation, and gross domestic product.',
+  'medium-3': 'Artificial intelligence is rapidly transforming our world. Machine learning algorithms can now perform tasks that were once thought to be exclusively human. From self-driving cars to medical diagnosis, AI is poised to revolutionize numerous industries and aspects of daily life.',
+
+  'hard-0': 'The intricacies of quantum mechanics, such as superposition and entanglement, challenge our classical intuition about reality. Phenomena at the subatomic level operate under probabilistic principles, defying deterministic predictions. Physicists utilize complex mathematical formalisms to describe these esoteric behaviors accurately.',
+  'hard-1': 'Bioinformatics synergizes biology, computer science, and statistics to analyze complex biological data. Gene sequencing, proteomic analysis, and phylogenetic reconstruction are computationally intensive tasks. Algorithms for sequence alignment, like BLAST, are fundamental tools that empower modern genomic research efforts.',
+  'hard-2': 'Cryptocurrency leverages decentralized blockchain technology to facilitate secure peer-to-peer transactions. Cryptographic hash functions and consensus mechanisms like Proof-of-Work (PoW) ensure the integrity and immutability of the distributed ledger, obviating the need for traditional financial intermediaries.',
+  'hard-3': 'Jurisprudence involves the theoretical study of law, analyzing its philosophical underpinnings and societal implications. Positivism, natural law, and legal realism present divergent perspectives on the nature of law. The interpretation of statutes and precedents requires sophisticated hermeneutical and analogical reasoning.'
+};
