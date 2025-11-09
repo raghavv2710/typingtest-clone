@@ -16,7 +16,7 @@ export function TypingTest() {
   const [activeText, setActiveText] = useState(textSamples[0]);
   const [typed, setTyped] = useState('');
   const [status, setStatus] = useState<'waiting' | 'running' | 'finished'>('waiting');
-  const [timeLeft, setTimeLeft] = useState(TEST_DURATION -1);
+  const [timeLeft, setTimeLeft] = useState(TEST_DURATION - 1);
   
   const [stats, setStats] = useState({ wpm: 0, accuracy: 100, errors: 0 });
   const finalStats = useRef({ wpm: 0, accuracy: 100, errors: 0 });
@@ -31,8 +31,11 @@ export function TypingTest() {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     setStatus('finished');
     
-    const elapsedTime = (Date.now() - (startTimeRef.current ?? Date.now())) / 1000;
-    const wpm = elapsedTime > 0 ? (typed.replace(/\s/g, '').length / 5) / (elapsedTime / 60) : 0;
+    if (!startTimeRef.current) return;
+
+    const elapsedTime = (Date.now() - startTimeRef.current) / 1000;
+    const wpm = (typed.replace(/\s/g, '').length / 5) / (elapsedTime / 60);
+    
     let currentErrors = 0;
     for (let i = 0; i < typed.length; i++) {
         if (typed[i] !== textToType[i]) {
@@ -68,8 +71,12 @@ export function TypingTest() {
     }
   }, [typed, textToType.length, status, endTest]);
 
+  // Effect for timer
   useEffect(() => {
-    if (status !== 'running') return;
+    if (status !== 'running') {
+        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+        return;
+    }
 
     if (!startTimeRef.current) {
       startTimeRef.current = Date.now();
@@ -83,28 +90,35 @@ export function TypingTest() {
 
       if (newTimeLeft <= 0) {
         endTest();
-        return;
       }
-      
-      const wpm = elapsedTime > 0 ? (typed.replace(/\s/g, '').length / 5) / (elapsedTime / 60) : 0;
-
-      let currentErrors = 0;
-      for (let i = 0; i < typed.length; i++) {
-        if (typed[i] !== textToType[i]) {
-          currentErrors++;
-        }
-      }
-      
-      const accuracy = typed.length > 0 ? ((typed.length - currentErrors) / typed.length) * 100 : 100;
-      
-      setStats({ wpm: Math.round(wpm), accuracy: Math.max(0, Math.round(accuracy)), errors: currentErrors });
-
     }, 1000);
 
     return () => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
-  }, [status, typed, textToType, endTest]);
+  }, [status, endTest]);
+
+  // Effect for stats
+  useEffect(() => {
+    if (status !== 'running') return;
+    
+    const elapsedTime = (Date.now() - (startTimeRef.current ?? Date.now())) / 1000;
+    if (elapsedTime === 0) return;
+
+    const wpm = (typed.replace(/\s/g, '').length / 5) / (elapsedTime / 60);
+
+    let currentErrors = 0;
+    for (let i = 0; i < typed.length; i++) {
+      if (typed[i] !== textToType[i]) {
+        currentErrors++;
+      }
+    }
+    
+    const accuracy = typed.length > 0 ? ((typed.length - currentErrors) / typed.length) * 100 : 100;
+    
+    setStats({ wpm: Math.round(wpm), accuracy: Math.max(0, Math.round(accuracy)), errors: currentErrors });
+
+  }, [typed, status, textToType]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     e.preventDefault();
