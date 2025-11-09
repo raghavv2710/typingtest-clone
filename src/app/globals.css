@@ -14,7 +14,7 @@ body {
     --card-foreground: 210 40% 98%;
     --popover: 50 2% 45%;
     --popover-foreground: 210 40% 98%;
-    --primary: 35 100% 58%;
+    --primary: 210 60% 50%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -49,7 +49,7 @@ body {
     --card-foreground: 210 40% 98%;
     --popover: 50 2% 45%;
     --popover-foreground: 210 40% 98%;
-    --primary: 35 100% 58%;
+    --primary: 210 60% 50%;
     --primary-foreground: 210 40% 98%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -59,7 +59,7 @@ body {
     --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 204 80% 55%;
+    --border: 210 60% 50%;
     --input: 217.2 32.6% 17.5%;
     --ring: 210 60% 50%;
     --chart-1: 220 70% 50%;
@@ -85,4 +85,16 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.current-word {
+  color: hsl(var(--primary));
+}
+
+.correct {
+  color: hsl(var(--foreground));
+}
+
+.incorrect {
+  /* No special styling for incorrect words as requested */
 }
