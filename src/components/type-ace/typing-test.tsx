@@ -87,6 +87,7 @@ export function TypingTest() {
   }, [status, typed, textToType, endTest]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    e.preventDefault();
     if (status === 'finished') return;
 
     if (status === 'waiting') {
@@ -101,9 +102,10 @@ export function TypingTest() {
   }, [status, textToType.length]);
 
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
+    const target = window;
+    target.addEventListener('keydown', handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      target.removeEventListener('keydown', handleKeyDown);
     };
   }, [handleKeyDown]);
 
@@ -141,7 +143,7 @@ export function TypingTest() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="relative text-2xl/relaxed md:text-3xl/relaxed tracking-wide font-mono p-4 sm:p-6 md:p-8 rounded-lg border bg-muted/30 focus:outline-none" tabIndex={0}>
+          <div className="relative text-2xl/relaxed md:text-3xl/relaxed tracking-wide font-mono p-4 sm:p-6 md:p-8 rounded-lg border bg-muted/30 focus:outline-none">
             {status === 'waiting' && (
               <div className="absolute inset-0 flex items-center justify-center bg-background/70 rounded-lg">
                 <p className="text-lg text-muted-foreground animate-pulse">Start typing to begin the test...</p>
@@ -190,7 +192,7 @@ export function TypingTest() {
                   <div className="text-sm font-medium text-muted-foreground">WPM</div>
                   <div className="flex items-center gap-1">
                     <Zap className="h-5 w-5 text-primary" />
-                    <span className="text-2xl font-bold">{stats.wPM}</span>
+                    <span className="text-2xl font-bold">{stats.wpm}</span>
                   </div>
                 </div>
                 <div className="flex flex-col items-center">
