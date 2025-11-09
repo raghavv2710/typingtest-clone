@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Clock, Target, Zap } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
-const TEST_DURATION = 60; // seconds
+const TEST_DURATION = 31; // seconds
 
 export function TypingTest() {
   const [activeText, setActiveText] = useState(textSamples[0]);
@@ -30,8 +30,24 @@ export function TypingTest() {
   const endTest = useCallback(() => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     setStatus('finished');
-    finalStats.current = { ...stats };
-  }, [stats]);
+    
+    const elapsedTime = (Date.now() - (startTimeRef.current ?? Date.now())) / 1000;
+    const wpm = elapsedTime > 0 ? (typed.replace(/\s/g, '').length / 5) / (elapsedTime / 60) : 0;
+    let currentErrors = 0;
+    for (let i = 0; i < typed.length; i++) {
+        if (typed[i] !== textToType[i]) {
+            currentErrors++;
+        }
+    }
+    const accuracy = typed.length > 0 ? ((typed.length - currentErrors) / typed.length) * 100 : 100;
+    
+    finalStats.current = { 
+        wpm: Math.round(wpm), 
+        accuracy: Math.max(0, Math.round(accuracy)), 
+        errors: currentErrors 
+    };
+
+  }, [stats, typed, textToType]);
 
   const restartTest = useCallback(() => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
@@ -40,7 +56,11 @@ export function TypingTest() {
     setTimeLeft(TEST_DURATION);
     setStats({ wpm: 0, accuracy: 100, errors: 0 });
     startTimeRef.current = null;
-  }, []);
+    const newText = textSamples.find(t => t.id === activeText.id);
+    if (newText) {
+      setActiveText(newText);
+    }
+  }, [activeText.id]);
 
   useEffect(() => {
     if (status === 'running' && typed.length === textToType.length) {
@@ -77,7 +97,7 @@ export function TypingTest() {
       
       const accuracy = typed.length > 0 ? ((typed.length - currentErrors) / typed.length) * 100 : 100;
       
-      setStats({ wpm: Math.round(wpm), accuracy: Math.round(accuracy), errors: currentErrors });
+      setStats({ wpm: Math.round(wpm), accuracy: Math.max(0, Math.round(accuracy)), errors: currentErrors });
 
     }, 1000);
 
@@ -90,7 +110,7 @@ export function TypingTest() {
     e.preventDefault();
     if (status === 'finished') return;
 
-    if (status === 'waiting') {
+    if (status === 'waiting' && e.key.length === 1) {
       setStatus('running');
     }
 
@@ -143,7 +163,7 @@ export function TypingTest() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="relative text-2xl/relaxed md:text-3xl/relaxed tracking-wide font-mono p-4 sm:p-6 md:p-8 rounded-lg border bg-muted/30 focus:outline-none">
+          <div className="relative text-2xl/relaxed md:text-3xl/relaxed tracking-wide font-mono p-4 sm:p-6 md:p-8 rounded-lg border bg-muted/30">
             {status === 'waiting' && (
               <div className="absolute inset-0 flex items-center justify-center bg-background/70 rounded-lg">
                 <p className="text-lg text-muted-foreground animate-pulse">Start typing to begin the test...</p>
