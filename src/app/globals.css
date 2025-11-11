@@ -4,57 +4,56 @@
 
 body {
   font-family: Inter, Arial, Helvetica, sans-serif;
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
+/* ----------------------------
+   COLOR VARIABLES
+---------------------------- */
 @layer base {
   :root {
+    /* 🌞 Light mode palette */
+    --background: 0 0% 97%;
+    --foreground: 222.2 47.4% 11.2%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+    --primary: 215 80% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 16% 92%;
+    --muted-foreground: 215.4 16.3% 45%;
+    --accent: 215 80% 45%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 215 80% 45%;
+  }
+
+  .dark {
+    /* 🌚 Dark mode palette (your current one) */
     --background: 50 2% 35%;
     --foreground: 210 40% 98%;
     --card: 50 2% 45%;
     --card-foreground: 210 40% 98%;
     --popover: 50 2% 45%;
     --popover-foreground: 210 40% 98%;
-
-    /* Primary hue used for current-word and accents.
-       Increased saturation and darker shade for clarity. */
-    --primary: 198 95% 45%;         /* darker cyan-blue */
-    --primary-foreground: 198 95% 95%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 200 95% 60%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 210 60% 50%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 198 95% 55%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-  }
-
-  /* Dark theme overrides (class-based dark mode) */
-  .dark {
-    --background: 50 2% 35%;
-    --foreground: 210 40% 98%;
-    --card: 50 2% 45%;
-    --card-foreground: 210 40% 98%;
     --primary: 198 95% 45%;
     --primary-foreground: 198 95% 95%;
+    --secondary: 210 40% 20%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
     --accent: 198 95% 60%;
+    --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
     --border: 210 60% 50%;
+    --ring: 210 60% 50%;
   }
 }
 
@@ -67,36 +66,33 @@ body {
   }
 }
 
-/* make the currently-typed word pop visually (darker cyan, bold, glow) */
-.current-word {
-  color: hsl(var(--primary));
-  font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 6px;
-  text-decoration-thickness: 2px;
-  filter: drop-shadow(0 0 6px rgba(0,150,255,0.45));
+/* ----------------------------
+   TYPING TEST STYLING
+---------------------------- */
+.word {
+  margin-right: 0.6rem; /* added more spacing */
+  display: inline-block;
+  line-height: 1.6;
 }
 
-/* correct typed words */
+/* Current word - simple color only (no highlight, no underline) */
+.current-word {
+  color: hsl(var(--primary));
+  font-weight: 600;
+}
+
+/* Correct words */
 .correct {
   color: hsl(var(--foreground));
 }
 
-/* incorrect typed words - show red */
+/* Incorrect words */
 .incorrect {
-  color: rgb(233 68 68);
+  color: rgb(233, 68, 68);
 }
 
-/* timer emphasis class (use for large countdown) */
-.timer-blue {
-  color: hsl(var(--primary));
-  text-shadow: 0 0 8px rgba(0,150,255,0.55);
-  font-weight: 700;
-}
-
-/* small helpers to match look of the screenshots */
-.word {
-  margin-right: 0.25rem;
-  display: inline-block;
-  line-height: 1.4;
+/* Timer - clean simple text */
+.timer {
+  font-weight: 600;
+  color: hsl(var(--foreground));
 }
