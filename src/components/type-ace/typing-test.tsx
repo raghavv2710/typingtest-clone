@@ -29,7 +29,7 @@ export function TypingTest() {
   const [typedText, setTypedText] = useState("");
 
   const [status, setStatus] = useState<"waiting" | "running" | "finished">("waiting");
-  const [timeLeft, setTimeLeft] = useState(duration);
+  const [timeLeft, setTimeLeft] = useState<number>(duration);
   const [stats, setStats] = useState({ wpm: 0, accuracy: 100, errors: 0 });
 
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
@@ -69,8 +69,8 @@ export function TypingTest() {
     const difficultyKey = difficulty as keyof typeof textSamples;
     const samplesForDifficulty = textSamples[difficultyKey] || textSamples.easy;
     const idx = Math.floor(Math.random() * samplesForDifficulty.length);
-    const sample = samplesForDifficulty[idx];
-    const text = typeof sample === "string" ? sample : sample.text;
+    const sampleAny: any = (samplesForDifficulty as any)[idx];
+    const text = typeof sampleAny === "string" ? sampleAny : sampleAny?.text ?? String(sampleAny);
     setTextToType(text);
     setWords(text.split(" ").filter(Boolean));
   }, [difficulty]);
@@ -123,7 +123,7 @@ export function TypingTest() {
           if (typedWord[j] !== originalWord[j]) {
             errors++;
           }
-        }
+        } 
       }
     });
   
@@ -242,6 +242,64 @@ export function TypingTest() {
     );
   });
 
+  // --- Character-level diff logic for typo catching ---
+  // We compare each typed character against the target, inserting an underscore '_' when a space is omitted.
+  interface CharInfo { char: string; status: 'correct' | 'incorrect' | 'space-missed' | 'pending'; }
+  const target = textToType;
+  const typed = typedText;
+  const charStatuses: CharInfo[] = target.split('').map(c => ({ char: c, status: 'pending' }));
+  const typedDisplay: { key: string; char: string; status: 'correct' | 'incorrect'; }[] = [];
+  let tIdx = 0; // target index
+  let tyIdx = 0; // typed index
+
+  while (tyIdx < typed.length && tIdx < target.length) {
+    const tChar = target[tIdx];
+    const tyChar = typed[tyIdx];
+    if (tyChar === tChar) {
+      charStatuses[tIdx].status = 'correct';
+      typedDisplay.push({ key: `t-${tyIdx}`, char: tyChar, status: 'correct' });
+      tIdx++; tyIdx++;
+      continue;
+    }
+    // Missing space case: target has space, typed omitted it and typed next character
+    if (tChar === ' ' && tyChar === target[tIdx + 1]) {
+      charStatuses[tIdx].status = 'space-missed';
+      // Insert underscore representing missing space (error)
+      typedDisplay.push({ key: `space-missed-${tIdx}`, char: '_', status: 'incorrect' });
+      tIdx++; // consume the space only
+      // do not advance tyIdx so we compare same typed char against next target char
+      continue;
+    }
+    // Regular incorrect substitution
+    charStatuses[tIdx].status = 'incorrect';
+    typedDisplay.push({ key: `t-${tyIdx}`, char: tyChar, status: 'incorrect' });
+    tIdx++; tyIdx++;
+  }
+  // Extra typed characters beyond target length -> mark incorrect
+  while (tyIdx < typed.length) {
+    typedDisplay.push({ key: `extra-${tyIdx}`, char: typed[tyIdx], status: 'incorrect' });
+    tyIdx++;
+  }
+  const currentTargetIndex = tIdx; // position where user is currently at in target
+
+  const sampleCharSpans = charStatuses.map((info, idx) => {
+    let className = 'text-muted-foreground';
+
+    if (info.status === 'incorrect') className = 'text-red-500';
+    else if (info.status === 'space-missed') className = 'bg-red-500/30 rounded px-[2px]';
+    if (idx === currentTargetIndex && status !== 'finished') {
+      className += ' underline';
+    }
+    // Render space visibly if missed; else preserve spacing
+    const renderChar = info.char === ' ' ? (info.status === 'space-missed' ? ' ' : ' ') : info.char;
+    return <span key={idx} className={className}>{renderChar === ' ' ? '\u00A0' : renderChar}</span>;
+  });
+
+  const typedCharSpans = typedDisplay.map((t) => {
+    const cls = t.status === 'correct' ? 'text-green-500' : 'text-red-500';
+    return <span key={t.key} className={cls}>{t.char}</span>;
+  });
+
   if (status === "finished") {
     return <Results stats={stats} restartTest={restartTest} />;
   }
@@ -302,7 +360,12 @@ export function TypingTest() {
             ref={textContainerRef}
             className="absolute top-0 left-0 w-full transition-transform duration-300 ease-in-out"
           >
-            {wordSpans}
+            {/* Original word-based spans retained for scroll logic (hidden to avoid duplicate display) */}
+            <div className="hidden">{wordSpans}</div>
+            {/* Character-level sample display */}
+            <div className="mb-4 break-words">{sampleCharSpans}</div>
+            {/* Typed characters with error highlighting and underscores for missed spaces */}
+            <div className="break-words text-muted-foreground">{typedCharSpans}</div>
           </div>
         </div>
       </div>
@@ -315,7 +378,6 @@ export function TypingTest() {
           value={typedText}
           onChange={handleInputChange}
           onPaste={(e) => e.preventDefault()}
-          disabled={status === "finished"}
           autoFocus
           spellCheck="false"
           autoComplete="off"
