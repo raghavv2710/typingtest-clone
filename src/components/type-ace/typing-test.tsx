@@ -98,47 +98,93 @@ export function TypingTest() {
     restartTest();
   }, [duration, difficulty, restartTest]);
 
-  // --- Calculate stats ---
-  const calculateStats = useCallback(() => {
+  // // --- Calculate stats ---
+  // const calculateStats = useCallback(() => {
+  //   const elapsed = startTimeRef.current
+  //     ? (Date.now() - startTimeRef.current) / 1000
+  //     : 0;
+  //   if (elapsed === 0) {
+  //     return { wpm: 0, accuracy: 100, errors: 0 };
+  //   }
+  
+  //   const typedWordsArray = typedText.trim().split(/\s+/).filter(Boolean);
+  //   let correctChars = 0;
+  //   let errors = 0;
+  
+  //   typedWordsArray.forEach((typedWord, i) => {
+  //     const originalWord = words[i];
+  //     if (!originalWord) return;
+  
+  //     if (typedWord === originalWord) {
+  //       correctChars += originalWord.length + 1; // +1 for the space
+  //     } else {
+  //       // Count character-level errors for more accurate WPM
+  //       for (let j = 0; j < typedWord.length; j++) {
+  //         if (typedWord[j] !== originalWord[j]) {
+  //           errors++;
+  //         }
+  //       } 
+  //     }
+  //   });
+  
+  //   const wpm = (correctChars / 5) / (elapsed / 60);
+  //   const totalWordsTyped = Math.max(1, typedWordsArray.length);
+  //   const correctWordsCount = typedWordsArray.filter((word, i) => word === words[i]).length;
+  //   const accuracy = (correctWordsCount / totalWordsTyped) * 100;
+  
+  //   return {
+  //     wpm: Math.round(wpm > 0 ? wpm : 0),
+  //     accuracy: Math.round(accuracy >= 0 ? accuracy : 0),
+  //     errors: errors,
+  //   };
+  // }, [typedText, words]);
+  
+  // --- Calculate stats (WORD-BASED) ---
+// --- Calculate stats (WORD-BASED) ---
+const calculateStats = useCallback(
+  (final: boolean = false) => {
     const elapsed = startTimeRef.current
       ? (Date.now() - startTimeRef.current) / 1000
       : 0;
-    if (elapsed === 0) {
+
+    if (elapsed <= 0) {
       return { wpm: 0, accuracy: 100, errors: 0 };
     }
-  
-    const typedWordsArray = typedText.trim().split(/\s+/).filter(Boolean);
-    let correctChars = 0;
-    let errors = 0;
-  
-    typedWordsArray.forEach((typedWord, i) => {
-      const originalWord = words[i];
-      if (!originalWord) return;
-  
-      if (typedWord === originalWord) {
-        correctChars += originalWord.length + 1; // +1 for the space
-      } else {
-        // Count character-level errors for more accurate WPM
-        for (let j = 0; j < typedWord.length; j++) {
-          if (typedWord[j] !== originalWord[j]) {
-            errors++;
-          }
-        } 
+
+    const elapsedMinutes = elapsed / 60;
+
+    // Words typed so far (final = include incomplete last word)
+    let typedWordsArray = typedText.trim().split(/\s+/);
+    if (!final) {
+      // exclude incomplete last word while typing
+      if (!typedText.endsWith(" ")) {
+        typedWordsArray = typedWordsArray.slice(0, typedWordsArray.length - 1);
       }
+    }
+
+    const totalTyped = typedWordsArray.length;
+
+    // Count correct words
+    let correctWords = 0;
+    typedWordsArray.forEach((typedWord, i) => {
+      if (typedWord === words[i]) correctWords++;
     });
-  
-    const wpm = (correctChars / 5) / (elapsed / 60);
-    const totalWordsTyped = Math.max(1, typedWordsArray.length);
-    const correctWordsCount = typedWordsArray.filter((word, i) => word === words[i]).length;
-    const accuracy = (correctWordsCount / totalWordsTyped) * 100;
-  
+
+    const errors = totalTyped - correctWords;
+
+    const wpm = totalTyped / elapsedMinutes;
+    const accuracy =
+      totalTyped > 0 ? (correctWords / totalTyped) * 100 : 100;
+
     return {
-      wpm: Math.round(wpm > 0 ? wpm : 0),
-      accuracy: Math.round(accuracy >= 0 ? accuracy : 0),
-      errors: errors,
+      wpm: Math.round(wpm),
+      accuracy: Math.round(accuracy),
+      errors,
     };
-  }, [typedText, words]);
-  
+  },
+  [typedText, words]
+);
+
 
   // --- Smooth requestAnimationFrame timer ---
   useEffect(() => {
@@ -174,30 +220,73 @@ export function TypingTest() {
   }, [status, duration, calculateStats]);
 
 
-  // --- Handle typing input ---
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (status === "finished") return;
+  // // --- Handle typing input ---
+  // const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const value = e.target.value;
+  //   if (status === "finished") return;
 
-    if (status === "waiting" && value.length > 0) {
-      setStatus("running");
-      startTimeRef.current = startTimeRef.current ?? Date.now();
+  //   if (status === "waiting" && value.length > 0) {
+  //     setStatus("running");
+  //     startTimeRef.current = startTimeRef.current ?? Date.now();
+  //   }
+
+  //   setTypedText(value);
+
+  //   // This logic handles incorrect words
+  //   const typedWords = value.trim().split(/\s+/);
+  //   const currentTypedWord = typedWords[typedWords.length - 1];
+  //   const currentOriginalWord = words[typedWords.length - 1];
+
+  //   if (value.endsWith(' ') || currentTypedWord !== currentOriginalWord?.substring(0, currentTypedWord.length)) {
+  //      // Mark errors immediately for feedback, but accuracy calc is separate
+  //   }
+
+  //   const wordCount = value.trim().split(/\s+/).length;
+  //   setCurrentWordIndex(value.endsWith(" ") ? wordCount : wordCount - 1);
+  // };
+
+// --- Handle typing input (WORD-BASED) ---
+const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  let value = e.target.value;
+
+  if (status === "finished") return;
+
+  // Prevent first-char spaces
+  if (status === "waiting" && value.startsWith(" ")) {
+    value = value.trimStart();
+  }
+
+  if (status === "waiting" && value.length > 0) {
+    setStatus("running");
+    startTimeRef.current = Date.now();
+  }
+
+  setTypedText(value);
+
+  // Calculate current word index
+  const wordsTypedArr = value.trimEnd().split(/\s+/);
+  const endedWithSpace = value.endsWith(" ");
+  const currentIndex = endedWithSpace
+    ? wordsTypedArr.length
+    : wordsTypedArr.length - 1;
+
+  if (currentIndex < words.length) {
+    setCurrentWordIndex(currentIndex);
+  } else {
+    // Auto-finish if last word typed perfectly + space pressed
+    const lastWord = words[words.length - 1];
+    if (
+      endedWithSpace &&
+      wordsTypedArr.length - 1 === words.length &&
+      wordsTypedArr[words.length - 1] === lastWord
+    ) {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      setStatus("finished");
+      const finalStats = calculateStats(true);
+      setStats(finalStats);
     }
-
-    setTypedText(value);
-
-    // This logic handles incorrect words
-    const typedWords = value.trim().split(/\s+/);
-    const currentTypedWord = typedWords[typedWords.length - 1];
-    const currentOriginalWord = words[typedWords.length - 1];
-
-    if (value.endsWith(' ') || currentTypedWord !== currentOriginalWord?.substring(0, currentTypedWord.length)) {
-       // Mark errors immediately for feedback, but accuracy calc is separate
-    }
-
-    const wordCount = value.trim().split(/\s+/).length;
-    setCurrentWordIndex(value.endsWith(" ") ? wordCount : wordCount - 1);
-  };
+  }
+};
 
   // --- Scroll effect ---
   useEffect(() => {
@@ -282,17 +371,37 @@ export function TypingTest() {
   }
   const currentTargetIndex = tIdx; // position where user is currently at in target
 
-  const sampleCharSpans = charStatuses.map((info, idx) => {
-    let className = 'text-muted-foreground';
+  // const sampleCharSpans = charStatuses.map((info, idx) => {
+  //   let className = 'text-muted-foreground';
 
-    if (info.status === 'incorrect') className = 'text-red-500';
-    else if (info.status === 'space-missed') className = 'bg-red-500/30 rounded px-[2px]';
-    if (idx === currentTargetIndex && status !== 'finished') {
-      className += ' underline';
+  //   if (info.status === 'incorrect') className = 'text-red-500';
+  //   else if (info.status === 'space-missed') className = 'bg-red-500/30 rounded px-[2px]';
+  //   if (idx === currentTargetIndex && status !== 'finished') {
+  //     className += ' underline';
+  //   }
+  //   // Render space visibly if missed; else preserve spacing
+  //   const renderChar = info.char === ' ' ? (info.status === 'space-missed' ? ' ' : ' ') : info.char;
+  //   return <span key={idx} className={className}>{renderChar === ' ' ? '\u00A0' : renderChar}</span>;
+  // });
+
+  // --- Word-by-word coloring based on correctness ---
+  const sampleCharSpans = words.map((word, idx) => {
+    const typedWordsArr = typedText.trim().split(/\s+/);
+    const typedWord = typedWordsArr[idx] || "";
+    const isCurrent = idx === currentWordIndex;
+
+    let color = "text-muted-foreground";
+
+    if (idx < currentWordIndex) {
+      // completed words
+      color = typedWord === word ? "text-green-500" : "text-red-500";
     }
-    // Render space visibly if missed; else preserve spacing
-    const renderChar = info.char === ' ' ? (info.status === 'space-missed' ? ' ' : ' ') : info.char;
-    return <span key={idx} className={className}>{renderChar === ' ' ? '\u00A0' : renderChar}</span>;
+
+    return (
+      <span key={idx} className={`word word-${idx} inline-block mr-2 ${color}`}>
+        {word}
+      </span>
+    );
   });
 
   const typedCharSpans = typedDisplay.map((t) => {
